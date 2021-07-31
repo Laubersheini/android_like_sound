@@ -6,9 +6,11 @@ Rythmbox is playing music, you open up youtube and start a video, the script det
 
 ## Usage
 The script only requires dbus-python
+
 pip install dbus-python
 
 to run the script simply execute it
+
 python3 android_like_sound.py
 
 ## Why?
