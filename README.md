@@ -5,9 +5,9 @@ This means that only one source of sound is allowed at any time.
 Rythmbox is playing music, you open up youtube and start a video, the script detects that a new source started playing and pauses Rythmbox.
 
 ## Usage
-The script only requires dbus-python
+The script only requires pydbus
 
-pip install dbus-python
+pip install pydbus
 
 to run the script simply execute it
 
