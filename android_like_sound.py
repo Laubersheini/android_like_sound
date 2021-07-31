@@ -1,7 +1,9 @@
-import dbus
+from pydbus import SessionBus
 import time
 
-bus = dbus.SessionBus()
+bus = SessionBus()
+from gi.repository import GLib
+loop = GLib.MainLoop()
 #proxy = bus.get_object('org.mpris.MediaPlayer2.spotify','/org/mpris/MediaPlayer2')
 #properties_manager = dbus.Interface(proxy, 'org.freedesktop.DBus.Properties')
 #event_manager = dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player')
@@ -20,24 +22,20 @@ property_managers = []
 event_managers = []
 
 
-for names in bus.list_names():
+for names in bus.dbus.ListNames():
     if "mpris" in names:
         print(names)
         players.append(names)
-        proxy = bus.get_object(names,'/org/mpris/MediaPlayer2')
+        proxy = bus.get(names,'/org/mpris/MediaPlayer2')
         proxies.append( proxy)
-        property_manager =  dbus.Interface(proxy, 'org.freedesktop.DBus.Properties')
-        property_managers.append( property_manager)
-        event_managers.append(dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player'))
-        playStates.append(property_manager.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
+        playStates.append(proxy.PlaybackStatus)
 
 #event_managers[0].PlayPause()
-
 
 while True:
     time.sleep(0.5)
     #update the players
-    bus_names = bus.list_names()
+    bus_names =bus.dbus.ListNames()
     print("checking for new players:")
     for names in bus_names :
         if "mpris" in names:
@@ -45,10 +43,8 @@ while True:
             if not names in players:
                 print("adding: " + names)
                 players.append(names)
-                proxy = bus.get_object(names,'/org/mpris/MediaPlayer2')
+                proxy = bus.get(names,'/org/mpris/MediaPlayer2')
                 proxies.append( proxy) 
-                property_managers.append( dbus.Interface(proxy, 'org.freedesktop.DBus.Properties'))
-                event_managers.append(dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player'))
                 playStates.append("Paused")
 
     print("cheking for recently closed players:") 
@@ -57,8 +53,6 @@ while True:
            print("deleting player: " + players[i])
            del players[i]
            del proxies[i]
-           del property_managers[i]
-           del event_managers[i]
            del playStates[i]
 
 
@@ -71,7 +65,7 @@ while True:
     if len(players)>0:
         for i in range(len(players)):
             try:
-                newPlayStates.append(property_managers[i].Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
+                newPlayStates.append(proxies[i].PlaybackStatus)
             except:
                 pass
             print(newPlayStates[i] + " " + playStates[i])
@@ -82,7 +76,7 @@ while True:
 
     #pause everything exept the thing that just started playing
         if playerToNotPause != -1 :
-            for i in range(len(event_managers)):
+            for i in range(len(proxies)):
                 if(i != playerToNotPause):
-                    event_managers[i].Pause()
+                    proxies[i].Pause()
         playStates = newPlayStates;
