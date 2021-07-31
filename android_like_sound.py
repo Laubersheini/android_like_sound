@@ -1,5 +1,6 @@
 from pydbus import SessionBus
 import time
+import sys
 
 bus = SessionBus()
 from gi.repository import GLib
@@ -19,11 +20,19 @@ loopEnabled = True
 players = []
 playStates = []
 proxies = []
+#these are characters from fontawesome and may not get rendered in your editor
+disabledCharacter = "" 
+#disabledCharacter = "Linux" 
+enabledCharacter = ""
+#enabledCharacter = "Android"
 #help(bus.dbus.Interfaces)
+sys.stdout.write(enabledCharacter+ "\n")
+sys.stdout.flush()
+
 
 for names in bus.dbus.ListNames():
     if "mpris" in names:
-        print(names)
+        #print(names)
         players.append(names)
         proxy = bus.get(names,'/org/mpris/MediaPlayer2')
         proxies.append( proxy)
@@ -32,7 +41,7 @@ for names in bus.dbus.ListNames():
 #event_managers[0].PlayPause()
 def loop_function():
     global loopEnabled
-    print(loopEnabled)
+    #print(loopEnabled)
     if loopEnabled:
         global proxies
         global players
@@ -41,21 +50,21 @@ def loop_function():
         time.sleep(0.5)
         #update the players
         bus_names =bus.dbus.ListNames()
-        print("checking for new players:")
+        #print("checking for new players:")
         for names in bus_names :
             if "mpris" in names:
-                print(names)
+                #print(names)
                 if not names in players:
-                    print("adding: " + names)
+                    #print("adding: " + names)
                     players.append(names)
                     proxy = bus.get(names,'/org/mpris/MediaPlayer2')
                     proxies.append( proxy) 
                     playStates.append("Paused")
 
-        print("cheking for recently closed players:") 
+        #print("cheking for recently closed players:") 
         for i in range(len(players)-1,-1,-1):
             if not (players[i] in bus_names):
-                print("deleting player: " + players[i])
+                #print("deleting player: " + players[i])
                 del players[i]
                 del proxies[i]
                 del playStates[i]
@@ -66,18 +75,18 @@ def loop_function():
     
         playerToNotPause = -1
         newPlayStates = []
-        print(players)
+        #print(players)
         if len(players)>0:
             for i in range(len(players)):
                 try:
                     newPlayStates.append(proxies[i].PlaybackStatus)
                 except:
                     pass
-                print(newPlayStates[i] + " " + playStates[i])
+                #print(newPlayStates[i] + " " + playStates[i])
                 if newPlayStates[i] == "Playing" and playStates[i] != "Playing":
-                    print(players[i])
-                    playerToNotPause = i
-            print(playerToNotPause)
+                    #print(players[i])
+                    playerToNotPause = i 
+                    #print(playerToNotPause)
 
         #pause everything exept the thing that just started playing
             if playerToNotPause != -1 :
@@ -123,7 +132,13 @@ class Example(object):
         global loop_function
         loopEnabled = value
         if loopEnabled :
+            sys.stdout.write(enabledCharacter+ "\n")
+            sys.stdout.flush()
             loop_function()
+        else:
+            sys.stdout.write(disabledCharacterö+ "\n")
+            sys.stdout.flush()
+            
         self._Enabled = value
         self.PropertiesChanged("io.github.laubersheini.mobileAudio", {"Enabled": self.Enabled}, [])
 
