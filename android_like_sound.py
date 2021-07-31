@@ -20,7 +20,7 @@ playStates = []
 proxies = []
 property_managers = []
 event_managers = []
-
+#help(bus.dbus.Interfaces)
 
 for names in bus.dbus.ListNames():
     if "mpris" in names:
@@ -32,7 +32,11 @@ for names in bus.dbus.ListNames():
 
 #event_managers[0].PlayPause()
 
-while True:
+def loop_function():
+    global proxies
+    global players
+    global playStates
+    global loop_function
     time.sleep(0.5)
     #update the players
     bus_names =bus.dbus.ListNames()
@@ -80,3 +84,7 @@ while True:
                 if(i != playerToNotPause):
                     proxies[i].Pause()
         playStates = newPlayStates;
+    GLib.timeout_add_seconds(0.5, loop_function)
+
+loop_function()
+loop.run()
