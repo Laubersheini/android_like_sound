@@ -38,11 +38,12 @@ while True:
     time.sleep(0.5)
     #update the players
     bus_names = bus.list_names()
+    print("checking for new players:")
     for names in bus_names :
         if "mpris" in names:
+            print(names)
             if not names in players:
-                
-                print(names)
+                print("adding: " + names)
                 players.append(names)
                 proxy = bus.get_object(names,'/org/mpris/MediaPlayer2')
                 proxies.append( proxy) 
@@ -50,13 +51,15 @@ while True:
                 event_managers.append(dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player'))
                 playStates.append("Paused")
 
-    for i in range(len(players)-1,0,-1):
-        if not players[i] in bus_names:
-            del players[i]
-            del proxies[i]
-            del property_managers[i]
-            del event_managers[i]
-            del playStates[i]
+    print("cheking for recently closed players:") 
+    for i in range(len(players)-1,-1,-1):
+        if not (players[i] in bus_names):
+           print("deleting player: " + players[i])
+           del players[i]
+           del proxies[i]
+           del property_managers[i]
+           del event_managers[i]
+           del playStates[i]
 
 
 
@@ -64,17 +67,22 @@ while True:
  
     playerToNotPause = -1
     newPlayStates = []
-    for i in range(len(players)):
-       newPlayStates.append(property_managers[i].Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
-       print(newPlayStates[i] + " " + playStates[i])
-       if newPlayStates[i] == "Playing" and playStates[i] != "Playing":
-           print(players[i])
-           playerToNotPause = i
-    print(playerToNotPause)
+    print(players)
+    if len(players)>0:
+        for i in range(len(players)):
+            try:
+                newPlayStates.append(property_managers[i].Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
+            except:
+                pass
+            print(newPlayStates[i] + " " + playStates[i])
+            if newPlayStates[i] == "Playing" and playStates[i] != "Playing":
+                print(players[i])
+                playerToNotPause = i
+        print(playerToNotPause)
 
     #pause everything exept the thing that just started playing
-    if playerToNotPause != -1 :
-        for i in range(len(event_managers)):
-            if(i != playerToNotPause):
-                event_managers[i].Pause()
-    playStates = newPlayStates;
+        if playerToNotPause != -1 :
+            for i in range(len(event_managers)):
+                if(i != playerToNotPause):
+                    event_managers[i].Pause()
+        playStates = newPlayStates;
