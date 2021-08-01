@@ -136,7 +136,7 @@ class Example(object):
             sys.stdout.flush()
             loop_function()
         else:
-            sys.stdout.write(disabledCharacterö+ "\n")
+            sys.stdout.write(disabledCharacter+ "\n")
             sys.stdout.flush()
             
         self._Enabled = value
