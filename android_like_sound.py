@@ -15,6 +15,7 @@ loop = GLib.MainLoop()
 #event_manager.PlayPause()
 
 #print(properties_manager.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
+#if this still sometimes chrashes we could just reinitialize every 60 sec to mitigate the issue
 
 loopEnabled = True
 players = []
@@ -81,7 +82,7 @@ def loop_function():
                 try:
                     newPlayStates.append(proxies[i].PlaybackStatus)
                 except:
-                    pass
+                    newPlayStates.append("Unknown")
                 #print(newPlayStates[i] + " " + playStates[i])
                 if newPlayStates[i] == "Playing" and playStates[i] != "Playing":
                     #print(players[i])
@@ -92,9 +93,12 @@ def loop_function():
             if playerToNotPause != -1 :
                 for i in range(len(proxies)):
                     if(i != playerToNotPause):
-                        proxies[i].Pause()
+                        try:
+                            proxies[i].Pause()
+                        except:
+                            pass
             playStates = newPlayStates
-        GLib.timeout_add_seconds(0.5, loop_function)
+        GLib.timeout_add(500, loop_function)
 
 loop_function()
 from pydbus.generic import signal
