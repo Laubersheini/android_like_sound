@@ -150,5 +150,14 @@ class Example(object):
 
 
 
+#sometimes the script prints an error, so print the character periodically to reshow this in polybar instead of the error
+def relogAudioType():
+    if loopEnabled:
+        sys.stdout.write(enabledCharacter+ "\n")
+    else:
+        sys.stdout.write(disabledCharacter+ "\n")
+    sys.stdout.flush()
+    GLib.timeout_add_seconds(10,relogAudioType)
+relogAudioType()
 bus.publish("io.github.laubersheini.mobileAudio", Example())
 loop.run()
