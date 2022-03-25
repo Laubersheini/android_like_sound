@@ -1,108 +1,119 @@
+from pydbus.generic import signal
+import subprocess
+from gi.repository import GLib
 from pydbus import SessionBus
 import time
 import sys
 
 bus = SessionBus()
-from gi.repository import GLib
 loop = GLib.MainLoop()
+
+
 #proxy = bus.get_object('org.mpris.MediaPlayer2.spotify','/org/mpris/MediaPlayer2')
 #properties_manager = dbus.Interface(proxy, 'org.freedesktop.DBus.Properties')
 #event_manager = dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player')
 #curr_volume = properties_manager.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
-#print(curr_volume)
+# print(curr_volume)
 
 #event_manager = dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player')
-#event_manager.PlayPause()
+# event_manager.PlayPause()
 
 #print(properties_manager.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
 
 loopEnabled = True
 players = []
-playStates = []
-proxies = []
-#these are characters from fontawesome and may not get rendered in your editor
-disabledCharacter = "" 
-#disabledCharacter = "Linux" 
+playStates = {}
+# these are characters from fontawesome and may not get rendered in your editor
+disabledCharacter = ""
+#disabledCharacter = "Linux"
 enabledCharacter = ""
 #enabledCharacter = "Android"
-#help(bus.dbus.Interfaces)
-sys.stdout.write(enabledCharacter+ "\n")
+# help(bus.dbus.Interfaces)
+sys.stdout.write(enabledCharacter + "\n")
 sys.stdout.flush()
 
+players = list(filter(lambda x: x != "", subprocess.check_output(
+    ["playerctl --list-all"], shell=True, universal_newlines=True).split("\n")))
 
-for names in bus.dbus.ListNames():
-    if "mpris" in names:
-        #print(names)
-        players.append(names)
-        proxy = bus.get(names,'/org/mpris/MediaPlayer2')
-        proxies.append( proxy)
-        playStates.append(proxy.PlaybackStatus)
+print(players)
 
-#event_managers[0].PlayPause()
+for name in players:
+    playStates[name] = subprocess.check_output(
+        ["playerctl -p " + name + " status"], shell=True, universal_newlines=True)
+
+# event_managers[0].PlayPause()
+
+
 def loop_function():
     global loopEnabled
-    #print(loopEnabled)
+    # print(loopEnabled)
     if loopEnabled:
         global proxies
         global players
         global playStates
         global loop_function
         time.sleep(0.5)
-        #update the players
-        bus_names =bus.dbus.ListNames()
-        #print("checking for new players:")
-        for names in bus_names :
-            if "mpris" in names:
-                #print(names)
-                if not names in players:
-                    #print("adding: " + names)
-                    players.append(names)
-                    proxy = bus.get(names,'/org/mpris/MediaPlayer2')
-                    proxies.append( proxy) 
-                    playStates.append("Paused")
+        # update the players
 
-        #print("cheking for recently closed players:") 
-        for i in range(len(players)-1,-1,-1):
-            if not (players[i] in bus_names):
+        new_players = list(filter(lambda x: x != "",subprocess.check_output(
+            ["playerctl --list-all"], shell=True, universal_newlines=True).split("\n")))
+        for name in new_players:
+            # print(names)
+            if not name in players:
+                #print("adding: " + names)
+                players.append(name)
+                playStates[name] = "Paused"
+
+        #print("cheking for recently closed players:")
+        for i in range(len(players)-1, -1, -1):
+            if not (players[i] in new_players):
                 #print("deleting player: " + players[i])
+                del playStates[players[i]]
                 del players[i]
-                del proxies[i]
-                del playStates[i]
 
+        # check if any player changed to playing
 
-
-        #check if any player changed to playing
-    
         playerToNotPause = -1
-        newPlayStates = []
-        #print(players)
-        if len(players)>0:
+        newPlayStates = {}
+        # print(players)
+        if len(players) > 0:
             for i in range(len(players)):
                 try:
-                    newPlayStates.append(proxies[i].PlaybackStatus)
+                    name = players[i]
+                    newPlayStates[name] = subprocess.check_output(
+                        ["playerctl -p " + name + " status"], shell=True, universal_newlines=True)[:-1]
+
                 except:
+                    players[name] = "Paused"
                     pass
                 #print(newPlayStates[i] + " " + playStates[i])
-                if newPlayStates[i] == "Playing" and playStates[i] != "Playing":
-                    #print(players[i])
-                    playerToNotPause = i 
-                    #print(playerToNotPause)
+                if newPlayStates[name] == "Playing" and playStates[name] != "Playing":
+                    # print(players[i])
+                    playerToNotPause = i
+                    # print(playerToNotPause)
 
-        #pause everything exept the thing that just started playing
-            if playerToNotPause != -1 :
-                for i in range(len(proxies)):
+        # pause everything exept the thing that just started playing
+            if playerToNotPause != -1:
+                for i in range(len(players)):
                     if(i != playerToNotPause):
-                        proxies[i].Pause()
+                        name = players[i]
+                        subprocess.check_output(
+                            ["playerctl -p " + name + " pause"], shell=True, universal_newlines=True)
+
             playStates = newPlayStates
+        print(players)
+        print(playStates)
         GLib.timeout_add_seconds(0.5, loop_function)
 
+
 loop_function()
-from pydbus.generic import signal
 '''        <method name='EchoString'>
           <arg type='s' name='a' direction='in'/>
           <arg type='s' name='response' direction='out'/>
         </method>
         '''
+
+
 class Example(object):
     """
     <node>
@@ -120,7 +131,7 @@ class Example(object):
         return s
 
     def __init__(self):
-        self._Enabled = True 
+        self._Enabled = True
 
     @property
     def Enabled(self):
@@ -128,22 +139,22 @@ class Example(object):
 
     @Enabled.setter
     def Enabled(self, value):
-        global loopEnabled 
+        global loopEnabled
         global loop_function
         loopEnabled = value
-        if loopEnabled :
-            sys.stdout.write(enabledCharacter+ "\n")
+        if loopEnabled:
+            sys.stdout.write(enabledCharacter + "\n")
             sys.stdout.flush()
             loop_function()
         else:
-            sys.stdout.write(disabledCharacterö+ "\n")
+            sys.stdout.write(disabledCharacter + "\n")
             sys.stdout.flush()
-            
+
         self._Enabled = value
-        self.PropertiesChanged("io.github.laubersheini.mobileAudio", {"Enabled": self.Enabled}, [])
+        self.PropertiesChanged("io.github.laubersheini.mobileAudio", {
+                               "Enabled": self.Enabled}, [])
 
     PropertiesChanged = signal()
-
 
 
 bus.publish("io.github.laubersheini.mobileAudio", Example())
