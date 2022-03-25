@@ -19,6 +19,7 @@ loop = GLib.MainLoop()
 # event_manager.PlayPause()
 
 #print(properties_manager.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
+#if this still sometimes chrashes we could just reinitialize every 60 sec to mitigate the issue
 
 loopEnabled = True
 players = []
