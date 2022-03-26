@@ -102,8 +102,6 @@ def loop_function():
                             ["playerctl -p " + name + " pause"], shell=True, universal_newlines=True)
 
             playStates = newPlayStates
-        print(players)
-        print(playStates)
         GLib.timeout_add_seconds(0.5, loop_function)
 
 
